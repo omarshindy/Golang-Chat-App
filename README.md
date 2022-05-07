@@ -57,6 +57,11 @@ These examples were taken from project.
 
 ## Messages Endpoints
 
-* [Create New Message](readme/CreateApplication.md) : `POST /api/application/{application_token}/{chat_number}/message`
+* [Create New Message](readme/CreateMessage.md) : `POST /api/application/{application_token}/{chat_number}/message`
 
 * [Get All Existing Messages](readme/GetAllMessages.md) : `GET /api/application/{application_token}/{chat_number}/message`
+*
+
+## Search Endpoint
+
+* [Search Messages](readme/Search.md) : `POST /api/application/{application_token}/chat`
