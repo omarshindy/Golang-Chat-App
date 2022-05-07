@@ -45,4 +45,4 @@ These examples were taken from project.
 
 * [Create New App](readme/CreateApplication.md) : `POST /api/application/`
 
-* [Update Existing App](readme/UpdateApplication.md) : `POST /api/application/`
+* [Update Existing App](readme/UpdateApplication.md) : `POST /api/application/{application_token}`
