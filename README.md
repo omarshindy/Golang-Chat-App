@@ -65,3 +65,45 @@ These examples were taken from project.
 ## Search Endpoint
 
 * [Search Messages](readme/Search.md) : `POST /api/application/{application_token}/chat`
+
+
+# Mysql connection
+
+* You can connect to mysql container using the following command 
+
+  ```sh
+  docker exec -it instabug_mysql bash
+  ```
+* Then to connect to mysql databse it self write the following command once the bash is opened from the previous command
+
+  ```sh
+  mysql -u instabug -p
+  ```
+  terminal will ask you to write password, the password is "root"
+  
+  then you can use instabug database and preform the queries you want as follows
+  
+  ```sh
+  use instabug;
+  select * from applications;
+  
+  ```
+  
+# Redis connection
+
+* You can connect to redis container using the following command 
+
+  ```sh
+  docker exec -it instabug_redis bash
+  ```
+  
+  Then we can connect to redis cli using the following commands to check for the cached key-value pairs
+  
+  ```sh
+  redis-cli
+  keys *
+  ```
+  
+  
+  
+  
