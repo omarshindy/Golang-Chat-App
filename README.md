@@ -48,3 +48,15 @@ These examples were taken from project.
 * [Update Existing App](readme/UpdateApplications.md) : `POST /api/application/{application_token}`
 
 * [Get All Existing Apps](readme/GetAllApps.md) : `GET /api/applications`
+
+
+## Chat Endpoint
+
+* [Create New Chat](readme/CreateChat.md) : `POST /api/application/{application_token}/chat`
+
+
+## Messages Endpoints
+
+* [Create New Message](readme/CreateApplication.md) : `POST /api/application/{application_token}/{chat_number}/message`
+
+* [Get All Existing Messages](readme/GetAllMessages.md) : `GET /api/application/{application_token}/{chat_number}/message`
