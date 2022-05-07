@@ -22,6 +22,6 @@ For an Application with wrong token should recieve response like follows
 
 ```json
 {
-			ErrorMessage: "Please check your App Token"
+	"ErrorMessage": "Please check your App Token"
 }
 ```
