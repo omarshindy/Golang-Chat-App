@@ -39,67 +39,18 @@ func CreateApplications(w http.ResponseWriter, r *http.Request) {
 	var application entities.Application
 	body := map[string]interface{}{}
 	json.NewDecoder(r.Body).Decode(&body)
-
-	application.Name = body["Name"].(string)
-	database.Instance.Create(&application)
-	w.Header().Set("content-type", "application/json")
-	json.NewEncoder(w).Encode(application)
-}
-
-func SearchMessage(w http.ResponseWriter, r *http.Request) {
-	searchString := mux.Vars(r)["message"]
-	ctx := context.Background()
-	client, err := elastic.NewClient(elastic.SetSniff(false), elastic.SetURL("http://instabug_elasticsearch:9200"))
-	if err != nil {
-		// Handle error
-		panic(err)
+	data, ok := body["Name"].(string)
+	if !ok {
+		w.Header().Set("content-type", "application/json")
+		json.NewEncoder(w).Encode(ErrorMessage{
+			ErrorMessage: "Invalid Application Name",
+		})
+	} else {
+		application.Name = data
+		database.Instance.Create(&application)
+		w.Header().Set("content-type", "application/json")
+		json.NewEncoder(w).Encode(application)
 	}
-
-	// Use the IndexExists service to check if a specified0 index exists.
-	exists, err := client.IndexExists("messages").Do(ctx)
-	if err != nil {
-		// Handle error
-		panic(err)
-	}
-
-	fmt.Printf("Index exists? %v\n", exists)
-
-	var results []map[string]interface{}
-
-	searchSource := elastic.NewSearchSource()
-	searchSource.Query(elastic.NewRegexpQuery("message_body", fmt.Sprint(".*", searchString, ".*")))
-
-	queryStr, err := searchSource.Source()
-	queryJs, err2 := json.Marshal(queryStr)
-
-	if err != nil || err2 != nil {
-		fmt.Println("[esclient][GetResponse]err during query marshal=", err, err2)
-	}
-	fmt.Println("[esclient]Final ESQuery=\n", string(queryJs))
-
-	searchService := client.Search().Index("messages").SearchSource(searchSource)
-
-	searchResult, err := searchService.Do(ctx)
-	if err != nil {
-		fmt.Println("[ProductsES][GetPIds]Error=", err)
-		return
-	}
-
-	for _, hit := range searchResult.Hits.Hits {
-		searchResults := map[string]interface{}{}
-		err := json.Unmarshal(hit.Source, &searchResults)
-		if err != nil {
-			fmt.Println("[Getting Students][Unmarshal] Err=", err)
-		}
-
-		delete(searchResults, "created_at")
-		delete(searchResults, "updated_at")
-		delete(searchResults, "number")
-		results = append(results, searchResults)
-	}
-
-	json.NewEncoder(w).Encode(results)
-
 }
 
 func GetApplications(w http.ResponseWriter, r *http.Request) {
@@ -113,25 +64,38 @@ func GetApplications(w http.ResponseWriter, r *http.Request) {
 func UpdateApplication(w http.ResponseWriter, r *http.Request) {
 	appToken := mux.Vars(r)["application_token"]
 	if checkIfApplicationExists(appToken) == false {
-		json.NewEncoder(w).Encode("Application Not Found!")
-		return
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(ErrorMessage{
+			ErrorMessage: "Please check your App Token",
+		})
+	} else {
+		var application entities.Application
+		body := map[string]interface{}{}
+		json.NewDecoder(r.Body).Decode(&body)
+		data, ok := body["Name"].(string)
+
+		if !ok {
+			w.Header().Set("content-type", "application/json")
+			json.NewEncoder(w).Encode(ErrorMessage{
+				ErrorMessage: "Invalid Application Update Parameters",
+			})
+		} else {
+			database.Instance.Where("token = ?", appToken).First(&application)
+			json.NewDecoder(r.Body).Decode(&application)
+			database.Instance.Model(&application).Update("name", data)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(SuccessMessage{
+				SuccessMessage: "App Updated Successfully",
+			})
+		}
 	}
-	var application entities.Application
-	body := map[string]interface{}{}
-	json.NewDecoder(r.Body).Decode(&body)
-	database.Instance.Where("token = ?", appToken).First(&application)
-	json.NewDecoder(r.Body).Decode(&application)
-	database.Instance.Model(&application).Update("name", body["Name"].(string))
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(SuccessMessage{
-		SuccessMessage: "App Updated Successfully",
-	})
 }
 
 func CreateChats(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var chat entities.Chat
 	var numberToInserted int32
+
 	appToken := mux.Vars(r)["application_token"]
 
 	if checkIfApplicationExists(appToken) == true {
@@ -230,7 +194,7 @@ func CreateMessages(w http.ResponseWriter, r *http.Request) {
 
 func GetMessages(w http.ResponseWriter, r *http.Request) {
 	var messages []entities.Message
-	var chat entities.Chat
+	queryChatRes := map[string]interface{}{}
 
 	appToken := mux.Vars(r)["application_token"]
 
@@ -240,14 +204,18 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		fmt.Println("chatNumber:", chatNumber)
 	}
-
-	database.Instance.Where("application_token = ? AND number = ?", appToken, chatNumber).First(&chat)
-	database.Instance.Where("chat_id = ?", chat.ID).Find(&messages)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(messages)
-
+	database.Instance.Where("application_token = ? AND number = ?", appToken, chatNumber).First(&queryChatRes)
+	if len(queryChatRes) == 0 || queryChatRes == nil {
+		w.Header().Set("content-type", "application/json")
+		json.NewEncoder(w).Encode(ErrorMessage{
+			ErrorMessage: "Please check your App Token and Chat Number",
+		})
+	} else {
+		database.Instance.Where("chat_id = ?", queryChatRes["ID"].(int32)).Find(&messages)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(messages)
+	}
 }
 
 func checkIfApplicationExists(application_token string) bool {
@@ -258,4 +226,61 @@ func checkIfApplicationExists(application_token string) bool {
 		return false
 	}
 	return true
+}
+
+func SearchMessage(w http.ResponseWriter, r *http.Request) {
+	searchString := mux.Vars(r)["message"]
+	ctx := context.Background()
+	client, err := elastic.NewClient(elastic.SetSniff(false), elastic.SetURL("http://instabug_elasticsearch:9200"))
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+
+	// Use the IndexExists service to check if a specified0 index exists.
+	exists, err := client.IndexExists("messages").Do(ctx)
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+
+	fmt.Printf("Index exists? %v\n", exists)
+
+	var results []map[string]interface{}
+
+	searchSource := elastic.NewSearchSource()
+	searchSource.Query(elastic.NewRegexpQuery("message_body", fmt.Sprint(".*", searchString, ".*")))
+
+	queryStr, err := searchSource.Source()
+	queryJs, err2 := json.Marshal(queryStr)
+
+	if err != nil || err2 != nil {
+		fmt.Println("[esclient][GetResponse]err during query marshal=", err, err2)
+	}
+	fmt.Println("[esclient]Final ESQuery=\n", string(queryJs))
+
+	searchService := client.Search().Index("messages").SearchSource(searchSource)
+
+	searchResult, err := searchService.Do(ctx)
+	if err != nil {
+		fmt.Println("[ProductsES][GetPIds]Error=", err)
+		return
+	}
+
+	for _, hit := range searchResult.Hits.Hits {
+		searchResults := map[string]interface{}{}
+		err := json.Unmarshal(hit.Source, &searchResults)
+		if err != nil {
+			fmt.Println("[Getting Students][Unmarshal] Err=", err)
+		}
+
+		delete(searchResults, "created_at")
+		delete(searchResults, "updated_at")
+		delete(searchResults, "number")
+		results = append(results, searchResults)
+	}
+
+	w.Header().Set("content-type", "application/json")
+	json.NewEncoder(w).Encode(results)
+
 }
