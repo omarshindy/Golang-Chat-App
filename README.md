@@ -47,4 +47,4 @@ These examples were taken from project.
 
 * [Update Existing App](readme/UpdateApplications.md) : `POST /api/application/{application_token}`
 
-* [Get All Existing App](readme/GetAllApps.md) : `GET /api/applications`
+* [Get All Existing Apps](readme/GetAllApps.md) : `GET /api/applications`
