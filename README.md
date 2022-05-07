@@ -36,3 +36,11 @@ Then navigate to instabug-task directory from terminal and write the following c
   ```
   Note that the container might take up to 3 minutes in the first build due to the healthcheck done in the docker-compose.yaml file to ensure that installation was done in a right way.
 
+# RESTAPIDocs Examples
+
+These examples were taken from project.
+
+## Application Endpoints
+
+
+* [Create New App](CreateApplication.md) : `POST /api/application/`
