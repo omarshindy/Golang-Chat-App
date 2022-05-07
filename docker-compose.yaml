@@ -1,0 +1,98 @@
+version: "3"
+services:
+  # add this:
+  mysql:
+    image: mysql:8
+    container_name: instabug_mysql
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_DATABASE: instabug
+      MYSQL_USER: instabug
+      MYSQL_PASSWORD: root
+    healthcheck:
+      # test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      test: "/usr/bin/mysql --user=$$MYSQL_USER --password=$$MYSQL_PASSWORD --execute \"SHOW DATABASES;\""
+      timeout: 20s
+      retries: 10
+    volumes:
+      # Dump files for initiating tables
+      - ./data/:/docker-entrypoint-initdb.d/
+  
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.3
+    container_name: instabug_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - ./volumes/elasticsearch:/var/lib/elasticsearch/data
+    logging:
+        driver: "json-file"
+        options:
+            max-size: "10k"
+            max-file: "10"
+    ports:
+      - 9200:9200
+
+  logstash:
+    build:
+      context: .
+      dockerfile: Dockerfile-logstash
+    container_name: instabug_logstash
+    # restart: on-failure
+    depends_on:
+      - mysql
+      - elasticsearch
+    volumes:
+      - ./volumes/logstash/pipeline/:/usr/share/logstash/pipeline/
+      - ./volumes/logstash/config/pipelines.yml:/usr/share/logstash/config/pipelines.yml
+      - ./volumes/logstash/config/queries/:/usr/share/logstash/config/queries/
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10k"
+        max-file: "10"
+
+  go:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: instabug_go
+    ports:
+      - 8080:8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:      
+        condition: service_healthy
+  
+  redis:
+    image: "redislabs/redismod"
+    container_name: instabug_redis
+    ports:
+      - 6379:6379
+    volumes:
+      - cache:/data
+    healthcheck:
+        test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+        interval: 1s
+        timeout: 3s
+        retries: 5
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.9.3
+    container_name: instabug_kibana
+    environment:
+      - "ELASTICSEARCH_URL=http://elasticsearch:9200"
+      - "SERVER_NAME=127.0.0.1"
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch 
+
+volumes:
+ cache:
+    driver: local

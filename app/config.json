@@ -1,0 +1,4 @@
+{
+    "connection_string": "instabug:root@tcp(instabug_mysql:3306)/instabug?parseTime=true",
+    "port": 8080
+}
