@@ -26,4 +26,20 @@ The Expected output shoud be like this
 }
 ```
 
+## Error Response 
 
+if we tried to send wrong data type like follows 
+
+```json
+{
+	"Name": 1
+}
+```
+
+The Expected output shoud be like this 
+
+```josn
+{
+    "ErrorMessage": "Invalid Application Name"
+}
+```
