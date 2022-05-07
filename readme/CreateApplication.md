@@ -38,7 +38,7 @@ if we tried to send wrong data type like follows
 
 The Expected output shoud be like this 
 
-```josn
+```json
 {
     "ErrorMessage": "Invalid Application Name"
 }
