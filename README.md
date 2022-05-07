@@ -40,9 +40,11 @@ Then navigate to instabug-task directory from terminal and write the following c
 
 These examples were taken from project.
 
-## Application Endpoints
 
+## Application Endpoints
 
 * [Create New App](readme/CreateApplication.md) : `POST /api/application/`
 
 * [Update Existing App](readme/UpdateApplications.md) : `POST /api/application/{application_token}`
+
+* [Get All Existing App](readme/GetAllApps.md) : `POST /api/application/{application_token}`
