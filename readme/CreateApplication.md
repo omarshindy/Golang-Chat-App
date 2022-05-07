@@ -5,6 +5,12 @@
 
 **Method** : `POST`
 
+**Request Body**
+```json
+{
+	"Name": "Omar"
+}
+```
 
 ## Success Response
 
