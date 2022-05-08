@@ -64,7 +64,7 @@ These examples were taken from project.
 
 ## Search Endpoint
 
-* [Search Messages](readme/Search.md) : `POST /api/application/{application_token}/chat`
+* [Search Messages](readme/Search.md) : `POST /api/search/{message}`
 
 
 # Mysql connection
